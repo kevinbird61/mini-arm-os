@@ -7,7 +7,7 @@
 #define STACK_SIZE	256
 
 /* Number of user task */
-#define TASK_LIMIT	3
+#define TASK_LIMIT	2 // change 3 -> 2
 
 /* USART TXE Flag
  * This flag is cleared when data is written to USARTx_DR and
