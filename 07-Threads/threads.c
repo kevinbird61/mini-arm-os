@@ -43,20 +43,25 @@ void __attribute__((naked)) pendsv_handler()
 	             "stmdb r0!, {r4-r11, lr}\n");
 	/* To get the task pointer address from result r0 */
 	asm volatile("mov   %0, r0\n" : "=r" (tasks[lastTask].stack));
+	
+	/* Create scheduler queue */
+	if(scheduled_count > count_in_use_thread){
+		scheduler_queue();
+		scheduled_count = 1;
+	}	
 
 	/* Find a new task to run */
 	while (1) {
-		lastTask++;
-		if (lastTask == MAX_TASKS)
-			lastTask = 0;
-		if (tasks[lastTask].in_use) {
-			/* Move the task's stack pointer address into r0 */
-			asm volatile("mov r0, %0\n" : : "r" (tasks[lastTask].stack));
-			/* Restore the new task's context and jump to the task */
-			asm volatile("ldmia r0!, {r4-r11, lr}\n"
-			             "msr psp, r0\n"
-			             "bx lr\n");
-		}
+		lastTask = Front_task();
+		Dequeue_task();
+		scheduled_count++;
+
+		/* Move the task's stack pointer address into r0 */
+		asm volatile("mov r0, %0\n" : : "r" (tasks[lastTask].stack));
+		/* Restore the new task's context and jump to the task */
+		asm volatile("ldmia r0!, {r4-r11, lr}\n"
+		             "msr psp, r0\n"
+		             "bx lr\n");
 	}
 }
 
