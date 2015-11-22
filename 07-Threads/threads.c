@@ -16,6 +16,25 @@ int scheduled_count = -1;
  * pointer.
  */
 
+/* Implement the scheduler */
+void scheduler_queue(){
+	for(int j = 0; j < MAX_TASKS ; j++){
+		tasks[j].scheduled = 0;
+	}
+	for(int k = 0; k<count_in_use_thread ; k++){
+		int max_priority = -1;
+		int enqueue_task_ID = -1;
+		for(int i = 0;i < MAX_TASKS;i++){
+			if((tasks[i].in_use == 1) && (tasks[i].priority > max_priority) && (tasks[i].scheduled == 0)){
+			max_priority = tasks[i].priority;
+			enqueue_task_ID = i;
+			}
+		}
+		Enqueue_task(enqueue_task_ID);
+		tasks[enqueue_task_ID].scheduled = 1;
+	}	
+}
+
 
 void __attribute__((naked)) pendsv_handler()
 {
@@ -48,7 +67,11 @@ void systick_handler()
 
 void thread_start()
 {
-	lastTask = 0;
+	scheduler_queue();
+	scheduled_count = 1;
+	lastTask = Front_task();
+	Dequeue_task();
+	scheduled_count++;
 
 	/* Save kernel context */
 	asm volatile("mrs ip, psr\n"
