@@ -2,12 +2,35 @@
 #include <stdint.h>
 #include "reg.h"
 #include "threads.h"
+#include "os.h"
+#include "UserStr.c"
 
 /* USART TXE Flag
  * This flag is cleared when data is written to USARTx_DR and
  * set when that data is transferred to the TDR
  */
-#define USART_FLAG_TXE	((uint16_t) 0x0080)
+
+/* For mutex part */
+int wait_Mutex(Mutex *mutex){
+	if(mutex->status == Mutex_unlock){
+		mutex->status = Mutex_lock;
+		return Mutex_success;	// success
+	}
+	else if(mutex->status == Mutex_lock){
+		return Mutex_failure;	// failure
+	}
+	return Mutex_failure;	// failure
+}
+
+void signal_Mutex(Mutex *mutex){
+	mutex->status = Mutex_unlock;
+}
+
+Mutex *current_Mutex = &(Mutex){
+	.status = Mutex_unlock
+};
+
+/* Implementation of RCC,GPIO,USART  */
 
 void usart_init(void)
 {
@@ -27,12 +50,68 @@ void usart_init(void)
 	*(USART2_CR1) |= 0x2000;
 }
 
+/* Implementation  I/O */
+
+void print(const char *str)
+{
+	while(*str){
+		while(!(*(USART2_SR) & USART_FLAG_TXE));
+		*(USART2_DR) = (*str & 0xFF);
+		str++;
+	}
+}
+
+void print_char(const char *str){
+	if(*str){
+		while(!(*(USART2_SR) & USART_FLAG_TXE));
+		*(USART2_DR) = (*str & 0xFF);
+	}
+}
+
 void print_str(const char *str)
 {
+	while(wait_Mutex(current_Mutex)!=1); // busy wait
 	while (*str) {
 		while (!(*(USART2_SR) & USART_FLAG_TXE));
 		*(USART2_DR) = (*str & 0xFF);
 		str++;
+	}
+	signal_Mutex(current_Mutex);
+}
+
+void print_count_str(const char *str , int count)
+{
+	while(wait_Mutex(current_Mutex) != 1); // busy wait
+	for(int i = 0; i < count ; i++){
+		print_char(str++);
+	}
+	signal_Mutex(current_Mutex);
+}
+
+/* Task subfunction */
+
+int command(const char *cmd , uint32_t index)
+{
+	if(strcmp(cmd,"help",4) && index==4 ){
+		while(wait_Mutex(current_Mutex)!= 1); // success
+		print("\nWelcome to kevin mini-shell\n");
+		print("Commands available : \n");
+		print("- help\n");
+		print("- about\n");	
+		//print("- ps\n");
+		//print("- test\n");
+		//print("- \"up arrow\"\n");
+		signal_Mutex(current_Mutex);
+		return 1;		
+	}
+	else if(strcmp(cmd , "about" , 5) && index == 5){
+		print("\nBuild by KevinChiu\n");
+		print("2015/11/22 First Edit\n");
+		print("Version 0.0.1\n");
+		return 1;
+	}
+	else{
+		return 0;
 	}
 }
 
@@ -51,17 +130,60 @@ static void busy_loop(void *str)
 	}
 }
 
-void test1(void *userdata)
+/* Implementation task function */
+
+void shell_command()
+{
+	/* Using variables */	
+	char str_buf[INPUT_MAX];
+	int index = 0;
+	/* Implement mini-shell */
+	while(1){
+		print_str("\nmini@kevin-shell:~$");
+		/* Blocking the task and get the input */
+		while(1){
+			if(*(USART2_SR) & USART_FLAG_RXNE){
+				str_buf[index] = (*(USART2_DR) & 0xFF);
+				if(str_buf[index]==0xD){
+					// '\r' in ascii
+					print_char("\n");
+					signal_Mutex(current_Mutex);
+					if(!command(str_buf , index)){
+						print_str("User Input:");
+						print_count_str(str_buf , index);
+					}
+						
+					print_str("\n");
+					index = 0;
+					print_str("\nmini@kevin-shell:~$");	
+				}
+				else{
+					if(index == 0){
+						print_str("\nmini@kevin-shell:~$");
+						while(wait_Mutex(current_Mutex)!=1); // busy wait
+						print_char(&str_buf[index]);
+						index++;
+					}
+				}
+				print_str(str_buf);
+			} 
+		}
+		delay(1000);
+	}
+}
+
+void shell(void *userdata)
+{
+	/* Start the shell */
+	shell_command();	
+}
+
+void fib_compute(void *userdata)
 {
 	busy_loop(userdata);
 }
 
-void test2(void *userdata)
-{
-	busy_loop(userdata);
-}
-
-void test3(void *userdata)
+void print_result(void *userdata)
 {
 	busy_loop(userdata);
 }
@@ -74,24 +196,27 @@ void test3(void *userdata)
 
 int main(void)
 {
-	const char *str1 = "Task1", *str2 = "Task2", *str3 = "Task3";
-
+	const char *str1 = "Build_Shell", *str2 = "Fibonacci", *str3 = "Print_result";
+	
 	usart_init();
 
-	if (thread_create(test1, (void *) str1) == -1)
-		print_str("Thread 1 creation failed\r\n");
+	if (thread_create(shell, (void *) str1) == -1)
+		print_str("Shell creation failed\r\n");
 
-	if (thread_create(test2, (void *) str2) == -1)
-		print_str("Thread 2 creation failed\r\n");
+	if (thread_create(fib_compute, (void *) str2) == -1)
+		print_str("Compute Fibonacci failed\r\n");
 
-	if (thread_create(test3, (void *) str3) == -1)
-		print_str("Thread 3 creation failed\r\n");
+	if (thread_create(print_result, (void *) str3) == -1)
+		print_str("Print Result failed\r\n");
 
 	/* SysTick configuration */
 	*SYSTICK_LOAD = (CPU_CLOCK_HZ / TICK_RATE_HZ) - 1UL;
 	*SYSTICK_VAL = 0;
 	*SYSTICK_CTRL = 0x07;
-
+	
+	/* Implement shell  */
+	//print_str("kevin@kevin-shell:~$\n");	
+	/* Do job */
 	thread_start();
 
 	return 0;
