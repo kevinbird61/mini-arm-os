@@ -196,7 +196,7 @@ void print_result(void *userdata)
 
 int main(void)
 {
-	const char *str1 = "Build_Shell", *str2 = "Fibonacci", *str3 = "Print_result";
+	char *str1 = "Build_Shell", *str2 = "Fibonacci", *str3 = "Print_result";
 	
 	usart_init();
 

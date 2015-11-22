@@ -5,7 +5,7 @@
 #define MAX_TASKS 10
 
 void thread_start();
-int thread_create(void (*run)(void*), void* userdata);
+int thread_create(void (*run)(void*), void* userdata,char *thread_name , int priority);
 void thread_kill(int thread_id);
 void thread_self_terminal();
 

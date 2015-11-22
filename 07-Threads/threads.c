@@ -3,6 +3,8 @@
 #include "os.h"
 #include "malloc.h"
 #include "reg.h"
+#include "task_queue.c"
+
 
 #define THREAD_PSP	0xFFFFFFFD
 static tcb_t tasks[MAX_TASKS];
@@ -137,7 +139,7 @@ int thread_create(void (*run)(void *), void *userdata , char *thread_name , int 
 	tasks[threadId].thread_name = thread_name;
 	tasks[threadId].priority = priority;
 	tasks[threadId].thread_tID = threadId;
-	count_int_use_thread++;	
+	count_in_use_thread++;	
 
 	return threadId;
 }

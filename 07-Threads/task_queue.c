@@ -17,12 +17,12 @@ void Dequeue_task(){
 	if(t_front == NULL){ // queue is empty
 		return;
 	}
-	if(front_task == rear_task){
+	if(t_front == t_rear){
 		t_front = NULL;
 		t_rear = NULL;
 	}
 	else{
-		t_front = t_front -> task;
+		t_front = t_front -> next;
 	}
 	free(temp);
 }
@@ -43,7 +43,7 @@ void Enqueue_task(int id){
 
 // Get Front
 int Front_task(){
-	if(front_task == NULL){ // task queue is empty
+	if(t_front == NULL){ // task queue is empty
 		return -1;
 	}
 	return t_front -> t_ID;

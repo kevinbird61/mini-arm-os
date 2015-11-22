@@ -28,7 +28,7 @@ size_t strlen(const char *str){
 /* String Reverse */
 void reverse(char *src_str){
 	int i,j;
-	for(i = 0,j = strlen(s)-1;i<j;i++,j--){
+	for(i = 0,j = strlen(src_str)-1;i<j;i++,j--){
 		char c = src_str[i];
 		src_str[i] = src_str[j];
 		src_str[j] = c;
