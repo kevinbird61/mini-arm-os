@@ -22,7 +22,7 @@ void strcpy(char *dst_str , const char *src_str , size_t n){
 size_t strlen(const char *str){
 	const char *temp_s;
 	for(temp_s = str; *temp_s ; ++temp_s);
-	return (temp_s - str)
+	return (temp_s - str);
 }
 
 /* String Reverse */
