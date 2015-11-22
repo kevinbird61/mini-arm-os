@@ -2,59 +2,60 @@
 #include "malloc.h"
 #include "os.h"
 
+
+
 struct tNode {
-	int t_ID;
-	struct tNode *next;
+	int tID;
+	struct tNode* next;
 };
 
-// Use circle queue
-struct tNode *t_front = NULL;
-struct tNode *t_rear = NULL;
+// Two glboal variables to store address of front_task and rear_task tNodes. 
+struct tNode* front_task = NULL;
+struct tNode* rear_task = NULL;
 
-// Delete from queue
-void Dequeue_task(){
-	struct tNode *temp = t_front;
-	if(t_front == NULL){ // queue is empty
+
+void Enqueue_task(int tID) {
+	struct tNode* temp = 
+		(struct tNode*)malloc(sizeof(struct tNode));
+	temp->tID = tID;
+
+	temp->next = NULL;
+	if(front_task == NULL && rear_task == NULL){
+		front_task = rear_task = temp;
 		return;
 	}
-	if(t_front == t_rear){
-		t_front = NULL;
-		t_rear = NULL;
+	rear_task->next = temp;
+	rear_task = temp;
+}
+
+
+void Dequeue_task() {
+	struct tNode* temp = front_task;
+	if(front_task == NULL) {
+		//print("Queue is empty\n");
+		return;
 	}
-	else{
-		t_front = t_front -> next;
+	if(front_task == rear_task) {
+		front_task = rear_task = NULL;
+	}
+	else {
+		front_task = front_task->next;
 	}
 	free(temp);
 }
 
-// Push in the queue
-void Enqueue_task(int id){
-	struct tNode *temp = (struct tNode*)malloc(sizeof(struct tNode));
-	temp -> t_ID = id;
-	temp -> next = NULL;
-	if(t_front == NULL && t_rear == NULL){
-		t_front = temp;
-		t_rear = temp;
-		return;
-	}
-	t_rear->next = NULL;
-	t_rear = temp;
-}
-
-// Get Front
-int Front_task(){
-	if(t_front == NULL){ // task queue is empty
+int _Front_task() {
+	if(front_task == NULL) {
+		//print("front_task is empty\n");
 		return -1;
 	}
-	return t_front -> t_ID;
+	return front_task->tID;
 }
 
-// Check Empty
 int isEmpty_task(){
-	if(t_front == NULL){
+	if(front_task == NULL){
 		return 1;
-	}
-	else{
+	}else{
 		return 0;
 	}
 	return 0;
