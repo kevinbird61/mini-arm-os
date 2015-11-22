@@ -9,10 +9,14 @@ static tcb_t tasks[MAX_TASKS];
 static int lastTask;
 static int first = 1;
 
+int count_in_use_thread = 0;
+int scheduled_count = -1;
 /* FIXME: Without naked attribute, GCC will corrupt r7 which is used for stack
  * pointer. If so, after restoring the tasks' context, we will get wrong stack
  * pointer.
  */
+
+
 void __attribute__((naked)) pendsv_handler()
 {
 	/* Save the old task's context */
@@ -65,7 +69,7 @@ void thread_start()
 	             "bx lr\n");
 }
 
-int thread_create(void (*run)(void *), void *userdata)
+int thread_create(void (*run)(void *), void *userdata , char *thread_name , int priority)
 {
 	/* Find a free thing */
 	int threadId = 0;
@@ -101,6 +105,11 @@ int thread_create(void (*run)(void *), void *userdata)
 	/* Construct the control block */
 	tasks[threadId].stack = stack;
 	tasks[threadId].in_use = 1;
+		
+	tasks[threadId].thread_name = thread_name;
+	tasks[threadId].priority = priority;
+	tasks[threadId].thread_tID = threadId;
+	count_int_use_thread++;	
 
 	return threadId;
 }

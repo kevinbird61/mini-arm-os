@@ -200,13 +200,13 @@ int main(void)
 	
 	usart_init();
 
-	if (thread_create(shell, (void *) str1) == -1)
+	if (thread_create(shell, (void *) str1, str1 , 3) == -1)
 		print_str("Shell creation failed\r\n");
 
-	if (thread_create(fib_compute, (void *) str2) == -1)
+	if (thread_create(fib_compute, (void *) str2 , str2 , 1) == -1)
 		print_str("Compute Fibonacci failed\r\n");
 
-	if (thread_create(print_result, (void *) str3) == -1)
+	if (thread_create(print_result, (void *) str3 , str3 , 2) == -1)
 		print_str("Print Result failed\r\n");
 
 	/* SysTick configuration */
